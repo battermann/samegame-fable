@@ -1,0 +1,65 @@
+﻿.horiz-centered {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.sg-cell {
+    width:30px;
+    height:30px;
+}
+
+.sg-table {
+    border-collapse: separate;
+    display:table;
+    width: initial;
+}
+
+.sg-td {
+}
+
+.sg-table, .sg-td {
+    border: none;
+    padding: 0px;
+    border-bottom: none;
+    border-spacing: 2px 2px;
+}
+
+#sg-score {
+    text-align: center;
+}
+
+.sg-color0 {
+    background-color: transparent;
+}
+
+.sg-color1 {
+    background-color: #858DB9;
+}
+
+.sg-color2 {
+    background-color: #82CB50;
+}
+
+.sg-color3 {
+    background-color: #C2533B;
+}
+
+.sg-color4 {
+    background-color: #4C4238;
+}
+
+.sg-color5 {
+    background-color: #8EC4A7;
+}
+
+.sg-color6 {
+    background-color: #A75BC4;
+}
+
+.sg-color7 {
+    background-color: #B9A04C;
+}
+
+.sg-color8 {
+    background-color: #B6537D;
+}
