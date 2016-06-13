@@ -6,6 +6,9 @@ samples/**/out/
 samples/**/bundle.js*
 src/providers/**/*.js*
 
+public/*.js
+public/*.js.map
+
 # Node
 node_modules/
 
