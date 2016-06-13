@@ -141,20 +141,24 @@ module SameGameDomain =
         | InProgress gameState -> play gameState pos |> evaluateGameState
         | _                    -> game
 
-    let private checkConfig conf onValid onInvalid =
+    let private isValid conf =
         if conf.MaxNumberOfColors < 3 || conf.MaxNumberOfColors > 8 then
-            onInvalid
+            false
         elif conf.NumberOfColumns < 3 || conf.NumberOfColumns > 20 then
-            onInvalid
-        elif conf.NumberOfRows < 3 || conf.NumberOfRows > 12 then
-            onInvalid
+            false
+        elif conf.NumberOfRows < 3 || conf.NumberOfRows > 20 then
+            false
         else
-            onValid conf
+            true
 
     let private newGame rnd config = 
-        List.init config.NumberOfColumns (fun _ -> List.init config.NumberOfRows (fun _ -> rnd config.MaxNumberOfColors |> Color |> Stone))
-        |> fun board -> { Board = board; Score = 0 }
-        |> evaluateGameState |> Some
+        let createBoard rnd config =
+            List.init config.NumberOfColumns (fun _ -> List.init config.NumberOfRows (fun _ -> rnd config.MaxNumberOfColors |> Color |> Stone))
+            |> fun board -> { Board = board; Score = 0 }
+            |> evaluateGameState |> Some
+        if config |> isValid then
+            createBoard rnd config
+        else None
 
     let api = {
         NewGame = newGame
