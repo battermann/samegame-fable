@@ -24,9 +24,14 @@
     border-spacing: 2px 2px;
 }
 
-#sg-score {
+#sg-score, #sg-board {
     text-align: center;
+    margin-bottom: 20px;
 }
+
+.new-button-wrapper {
+    text-align: center;
+} 
 
 .sg-color0 {
     background-color: transparent;
