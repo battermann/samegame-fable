@@ -161,11 +161,11 @@ module SameGameDomain =
         Play = playIfRunning }
 
 open Fable.Core 
-open Fable.Import
+open Fable.Import.Browser
 open System
 open SameGameTypes
 
-Node.require.Invoke("core-js") |> ignore
+Fable.Import.Node.require.Invoke("core-js") |> ignore
 
 let api = SameGameDomain.api
 
@@ -174,6 +174,33 @@ let play game (x,y) =
     | Some g -> 
         Some (api.Play g { Col = x; Row = y })
     | _  -> None
+
+let getTable board =
+    let makeCell x y col : HTMLTableCellElement =
+        let div = HTMLDivElement.Create()
+        div.className <- sprintf "sg-cell sg-color%d" col
+        let a = HTMLLinkElement.Create()
+        a.id <- sprintf "cell-%d-%d" x y
+        a.href <- "javaScript:void(0);"
+        let td = HTMLTableCellElement.Create()
+        td.className <- "sg-td"
+        td.appendChild a :?> HTMLTableCellElement   
+
+    let makeRows (board: int list list) =
+        [for y in [(board.[0].Length - 1)..(-1)..0] do 
+            yield ([0..(board.Length - 1)] |> List.map (fun x -> makeCell x y board.[x].[y]))
+                |> fun cells ->
+                    let tr = HTMLTableRowElement.Create()
+                    cells |> List.iter (fun c -> tr.appendChild c |> ignore)
+                    tr ]
+
+    let makeBoard (board: int list list) = 
+        let table = HTMLTableElement.Create()
+        table.className <- "sg-td"
+        makeRows board |> List.iter (fun tr -> table.appendChild tr |> ignore)
+        table
+    
+    makeBoard (board |> List.map (fun col -> col |> List.map (function Stone (Color c) -> c | Empty -> 0)))
 
 let renderBoard board =
     let renderCell x y col = sprintf "<td class='sg-td'><a href='javaScript:void(0);' id='cell-%d-%d'><div class='sg-cell sg-color%d'></div></a></td>" x y col
@@ -186,14 +213,14 @@ let renderBoard board =
     makeBoard (board |> List.map (fun col -> col |> List.map (function Stone (Color c) -> c | Empty -> 0)))
 
 let rec updateUi game =
-    let boardElement = Browser.document.getElementById("sg-board") :?> Browser.HTMLDivElement
-    let scoreElement = Browser.document.getElementById ("sg-score") :?> Browser.HTMLDivElement
+    let boardElement = document.getElementById("sg-board") :?> HTMLDivElement
+    let scoreElement = document.getElementById ("sg-score") :?> HTMLDivElement
 
     let addListeners maxColIndex maxRowIndex  =
         [0..maxColIndex] |> List.iter (fun x ->
             [0..maxRowIndex] |> List.iter (fun y -> 
                 let cellId = sprintf "cell-%d-%d" x y
-                let el = Browser.document.getElementById(cellId) :?> Browser.HTMLButtonElement
+                let el = document.getElementById(cellId) :?> HTMLButtonElement
                 el.addEventListener_click((fun _ -> 
                     let game = play game (x,y)
                     updateUi game; null))
@@ -201,13 +228,17 @@ let rec updateUi game =
     
     match game with
     | Some (InProgress gs) -> 
-        let board = renderBoard gs.Board
-        boardElement.innerHTML <- board
+//        let board = renderBoard gs.Board
+//        boardElement.innerHTML <- board
+        let b = getTable gs.Board
+        boardElement.appendChild b |> ignore
         addListeners (gs.Board.Length - 1) (gs.Board.[0].Length - 1)
         scoreElement.innerText <- sprintf "%i point(s)." gs.Score
     | Some (Finished gs)   -> 
-        let board = renderBoard gs.Board
-        boardElement.innerHTML <- board
+//        let board = renderBoard gs.Board
+//        boardElement.innerHTML <- board
+        let b = getTable gs.Board
+        boardElement.appendChild b |> ignore
         scoreElement.innerText <- sprintf "No more moves. Your final score is %i point(s)." gs.Score
     | _ -> boardElement.innerText <- "Sorry, an error occurred while rendering the board."
 
@@ -223,12 +254,12 @@ let defaultConfig =
         |> List.sum
         |> int
     
-    (Browser.document.getElementById("sg-board") :?> Browser.HTMLDivElement).className
+    (document.getElementById("sg-board") :?> HTMLDivElement).className
     |> fun className -> className.Split('-') 
     |> Array.map strToInt
     |> fun arr -> { NumberOfColumns =  arr.[0]; NumberOfRows = arr.[1]; MaxNumberOfColors = arr.[2] }
 
-let buttonNewGame = Browser.document.getElementById("new-game") :?> Browser.HTMLButtonElement
+let buttonNewGame = document.getElementById("new-game") :?> HTMLButtonElement
 buttonNewGame.addEventListener_click((fun _ -> 
     let game = api.NewGame rndColor defaultConfig
     updateUi game; null), false)

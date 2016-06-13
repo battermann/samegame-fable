@@ -49,7 +49,7 @@
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
-	exports.buttonNewGame = exports.defaultConfig = exports.rndColor = exports.rnd = exports.updateUi = exports.renderBoard = exports.play = exports.api = exports.SameGameDomain = exports.SameGameTypes = undefined;
+	exports.buttonNewGame = exports.defaultConfig = exports.rndColor = exports.rnd = exports.updateUi = exports.renderBoard = exports.getTable = exports.play = exports.api = exports.SameGameDomain = exports.SameGameTypes = undefined;
 	var strToInt;
 	
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -200,8 +200,8 @@
 	        return _fableCore.Seq.exists(function (col) {
 	            return _fableCore.Seq.exists(function (cell) {
 	                var matchValue, c;
-	                return matchValue = cell.State, matchValue.Case === "Stone" ? (c = matchValue.Fields[0], function ($var33) {
-	                    return !($var33.tail == null);
+	                return matchValue = cell.State, matchValue.Case === "Stone" ? (c = matchValue.Fields[0], function ($var1) {
+	                    return !($var1.tail == null);
 	                }(function (pos) {
 	                    return findAdjacentWithSameColor(board, c, pos);
 	                }(cell.Position))) : false;
@@ -229,8 +229,8 @@
 	    };
 	
 	    var isEmpty = function (board) {
-	        return _fableCore.Seq.forall(function ($var34) {
-	            return _fableCore.Util.compareTo(new SameGameTypes.CellState("Empty"), $var34.head) === 0;
+	        return _fableCore.Seq.forall(function ($var2) {
+	            return _fableCore.Util.compareTo(new SameGameTypes.CellState("Empty"), $var2.head) === 0;
 	        }, board);
 	    };
 	
@@ -265,21 +265,21 @@
 	    var removeGroup = function (group, board) {
 	        return function (cols) {
 	            return _fableCore.List.append(cols, _fableCore.List.replicate(board.length - cols.length, _fableCore.List.replicate(_fableCore.Seq.item(0, board).length, new SameGameTypes.CellState("Empty"))));
-	        }(_fableCore.List.filter(function ($var35) {
-	            return _fableCore.Util.compareTo(new SameGameTypes.CellState("Empty"), $var35.head) !== 0;
+	        }(_fableCore.List.filter(function ($var3) {
+	            return _fableCore.Util.compareTo(new SameGameTypes.CellState("Empty"), $var3.head) !== 0;
 	        }, _fableCore.List.mapi(function (i, col) {
 	            return function (col_) {
 	                return _fableCore.List.append(col_, _fableCore.List.replicate(col.length - col_.length, new SameGameTypes.CellState("Empty")));
 	            }(_fableCore.List.map(function (cell) {
 	                return cell.State;
 	            }, _fableCore.List.filter(function (cell) {
-	                return function ($var36) {
+	                return function ($var4) {
 	                    return !_fableCore.Seq.exists(function () {
 	                        var x;
 	                        return x = cell.Position, function (y) {
 	                            return _fableCore.Util.compareTo(x, y) === 0;
 	                        };
-	                    }(), $var36);
+	                    }(), $var4);
 	                }(group.Positions);
 	            }, _fableCore.List.mapi(function (j, cell) {
 	                return new SameGameTypes.Cell(new SameGameTypes.Position(i, j), cell);
@@ -344,6 +344,64 @@
 	    }() : null;
 	};
 	
+	var getTable = exports.getTable = function (board) {
+	    var makeCell, makeRows, makeBoard;
+	    return makeCell = function (x) {
+	        return function (y) {
+	            return function (col) {
+	                var div, a, td;
+	                return div = new HTMLDivElement(null), div.className = function () {
+	                    return function () {
+	                        var clo1;
+	                        return clo1 = _fableCore.String.fsFormat("sg-cell sg-color%d")(function (x) {
+	                            return x;
+	                        }), function (arg10) {
+	                            return clo1(arg10);
+	                        };
+	                    }();
+	                }()(col), a = new HTMLLinkElement(null), a.id = function () {
+	                    return function () {
+	                        var clo1;
+	                        return clo1 = _fableCore.String.fsFormat("cell-%d-%d")(function (x) {
+	                            return x;
+	                        }), function (arg10) {
+	                            return function () {
+	                                var clo2;
+	                                return clo2 = clo1(arg10), function (arg20) {
+	                                    return clo2(arg20);
+	                                };
+	                            }();
+	                        };
+	                    }();
+	                }()(x)(y), a.href = "javaScript:void(0);", td = new HTMLTableCellElement(null), td.className = "sg-td", td.appendChild(a);
+	            };
+	        };
+	    }, makeRows = function (board_1) {
+	        return _fableCore.Seq.toList(_fableCore.Seq.delay(function (unitVar) {
+	            return _fableCore.Seq.map(function (y) {
+	                return function (cells) {
+	                    var tr;
+	                    return tr = new HTMLTableRowElement(null), _fableCore.Seq.iter(function (c) {
+	                        tr.appendChild(c);
+	                    }, cells), tr;
+	                }(_fableCore.List.map(function (x) {
+	                    return makeCell(x)(y)(_fableCore.Seq.item(y, _fableCore.Seq.item(x, board_1)));
+	                }, _fableCore.Seq.toList(_fableCore.Seq.range(0, board_1.length - 1))));
+	            }, _fableCore.Seq.toList(_fableCore.Seq.rangeStep(_fableCore.Seq.item(0, board_1).length - 1, -1, 0)));
+	        }));
+	    }, makeBoard = function (board_1) {
+	        var table;
+	        return table = new HTMLTableElement(null), table.className = "sg-td", _fableCore.Seq.iter(function (tr) {
+	            table.appendChild(tr);
+	        }, makeRows(board_1)), table;
+	    }, makeBoard(_fableCore.List.map(function (col) {
+	        return _fableCore.List.map(function (_arg1) {
+	            var c;
+	            return _arg1.Case === "Empty" ? 0 : (c = _arg1.Fields[0].Fields[0], c);
+	        }, col);
+	    }, board));
+	};
+	
 	var renderBoard = exports.renderBoard = function (board) {
 	    var renderCell, makeBoard;
 	    return renderCell = function (x) {
@@ -388,7 +446,7 @@
 	};
 	
 	var updateUi = exports.updateUi = function (game) {
-	    var gs, board;
+	    var gs, b;
 	    var boardElement = document.getElementById("sg-board");
 	    var scoreElement = document.getElementById("sg-score");
 	
@@ -422,7 +480,7 @@
 	        };
 	    };
 	
-	    game != null ? game.Case === "Finished" ? (gs = game.Fields[0], board = renderBoard(gs.Board), boardElement.innerHTML = board, scoreElement.innerText = function () {
+	    game != null ? game.Case === "Finished" ? (gs = game.Fields[0], b = getTable(gs.Board), boardElement.appendChild(b), scoreElement.innerText = function () {
 	        return function () {
 	            var clo1;
 	            return clo1 = _fableCore.String.fsFormat("No more moves. Your final score is %i point(s).")(function (x) {
@@ -431,7 +489,7 @@
 	                return clo1(arg10);
 	            };
 	        }();
-	    }()(gs.Score)) : (gs = game.Fields[0], board = renderBoard(gs.Board), boardElement.innerHTML = board, addListeners(gs.Board.length - 1)(_fableCore.Seq.item(0, gs.Board).length - 1), scoreElement.innerText = function () {
+	    }()(gs.Score)) : (gs = game.Fields[0], b = getTable(gs.Board), boardElement.appendChild(b), addListeners(gs.Board.length - 1)(_fableCore.Seq.item(0, gs.Board).length - 1), scoreElement.innerText = function () {
 	        return function () {
 	            var clo1;
 	            return clo1 = _fableCore.String.fsFormat("%i point(s).")(function (x) {
