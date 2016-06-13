@@ -161,11 +161,11 @@ module SameGameDomain =
         Play = playIfRunning }
 
 open Fable.Core 
-open Fable.Import
+open Fable.Import.Browser
 open System
 open SameGameTypes
 
-Node.require.Invoke("core-js") |> ignore
+Fable.Import.Node.require.Invoke("core-js") |> ignore
 
 let api = SameGameDomain.api
 
@@ -186,14 +186,14 @@ let renderBoard board =
     makeBoard (board |> List.map (fun col -> col |> List.map (function Stone (Color c) -> c | Empty -> 0)))
 
 let rec updateUi game =
-    let boardElement = Browser.document.getElementById("sg-board") :?> Browser.HTMLDivElement
-    let scoreElement = Browser.document.getElementById ("sg-score") :?> Browser.HTMLDivElement
+    let boardElement = document.getElementById("sg-board") :?> HTMLDivElement
+    let scoreElement = document.getElementById ("sg-score") :?> HTMLDivElement
 
     let addListeners maxColIndex maxRowIndex  =
         [0..maxColIndex] |> List.iter (fun x ->
             [0..maxRowIndex] |> List.iter (fun y -> 
                 let cellId = sprintf "cell-%d-%d" x y
-                let el = Browser.document.getElementById(cellId) :?> Browser.HTMLButtonElement
+                let el = document.getElementById(cellId) :?> HTMLButtonElement
                 el.addEventListener_click((fun _ -> 
                     let game = play game (x,y)
                     updateUi game; null))
@@ -223,12 +223,12 @@ let defaultConfig =
         |> List.sum
         |> int
     
-    (Browser.document.getElementById("sg-board") :?> Browser.HTMLDivElement).className
+    (document.getElementById("sg-board") :?> HTMLDivElement).className
     |> fun className -> className.Split('-') 
     |> Array.map strToInt
     |> fun arr -> { NumberOfColumns =  arr.[0]; NumberOfRows = arr.[1]; MaxNumberOfColors = arr.[2] }
 
-let buttonNewGame = Browser.document.getElementById("new-game") :?> Browser.HTMLButtonElement
+let buttonNewGame = document.getElementById("new-game") :?> HTMLButtonElement
 buttonNewGame.addEventListener_click((fun _ -> 
     let game = api.NewGame rndColor defaultConfig
     updateUi game; null), false)
