@@ -148,9 +148,9 @@ module SameGameDomain =
     let private isValid conf =
         if conf.MaxNumberOfColors < 3 || conf.MaxNumberOfColors > 8 then
             false
-        elif conf.NumberOfColumns < 3 || conf.NumberOfColumns > 20 then
+        elif conf.NumberOfColumns < 3 || conf.NumberOfColumns > 15 then
             false
-        elif conf.NumberOfRows < 3 || conf.NumberOfRows > 20 then
+        elif conf.NumberOfRows < 3 || conf.NumberOfRows > 15 then
             false
         else
             true
@@ -189,7 +189,7 @@ let renderBoardToHtmlString (board:Board) =
 
     let makeBoard (board: int list list) = 
         "<table class='sg-table horiz-centered'>"
-        + String.concat "" [for y in [(board.[0].Length - 1)..(-1)..0] do yield "<tr>" + String.concat "" ([0..(board.Length - 1)] |> List.map (fun x -> renderCell x y board.[x].[y])) + "</tr>"]
+        + String.concat "" [for y in [(board.[0].Length - 1)..(-1)..0] do yield "<tr class='sg-tr'>" + String.concat "" ([0..(board.Length - 1)] |> List.map (fun x -> renderCell x y board.[x].[y])) + "</tr>"]
         + "</table>"
 
     makeBoard (board |> List.map (fun col -> col |> List.map (function Stone (Color c) -> c | Empty -> 0)))
