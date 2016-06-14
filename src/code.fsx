@@ -42,8 +42,10 @@ module SameGameTypes =
         NumberOfRows:int
         MaxNumberOfColors:int }
 
+    type StoneGenerator = (int -> CellState)
+
     type SameGameApi = {
-        NewGame: (int -> int) -> GameConfig -> Game option
+        NewGame: StoneGenerator -> GameConfig -> Game option
         Play: Game -> Position -> Game }
 
 module SameGameDomain =
@@ -151,13 +153,13 @@ module SameGameDomain =
         else
             true
 
-    let private newGame rnd config = 
-        let createBoard rnd config =
-            List.init config.NumberOfColumns (fun _ -> List.init config.NumberOfRows (fun _ -> rnd config.MaxNumberOfColors |> Color |> Stone))
+    let private newGame gen config = 
+        let createBoard gen config =
+            List.init config.NumberOfColumns (fun _ -> List.init config.NumberOfRows (fun _ -> gen config.MaxNumberOfColors))
             |> fun board -> { Board = board; Score = 0 }
             |> evaluateGameState |> Some
         if config |> isValid then
-            createBoard rnd config
+            createBoard gen config
         else None
 
     let api = {
@@ -179,7 +181,8 @@ let play game (x,y) =
         Some (api.Play g { Col = x; Row = y })
     | _  -> None
 
-let renderBoard board =
+// val renderBoard : board:Board -> string
+let renderBoard (board:Board) =
     let renderCell x y col = sprintf "<td class='sg-td'><a href='javaScript:void(0);' id='cell-%d-%d'><div class='sg-cell sg-color%d'></div></a></td>" x y col
 
     let makeBoard (board: int list list) = 
@@ -200,8 +203,7 @@ let rec updateUi game =
                 let el = document.getElementById(cellId) :?> HTMLButtonElement
                 el.addEventListener_click((fun _ -> 
                     let game = play game (x,y)
-                    updateUi game; null))
-                ()))
+                    updateUi game; null))))
     
     match game with
     | Some (InProgress gs) -> 
@@ -216,7 +218,7 @@ let rec updateUi game =
     | _ -> boardElement.innerText <- "Sorry, an error occurred while rendering the board."
 
 let rnd = new System.Random()
-let rndColor i = rnd.Next(i) + 1
+let colorGtor i = rnd.Next(i) + 1 |> Color |> Stone 
 
 let defaultConfig = 
     // no fable support for System.Int32.Parse
@@ -234,7 +236,7 @@ let defaultConfig =
 
 let buttonNewGame = document.getElementById("new-game") :?> HTMLButtonElement
 buttonNewGame.addEventListener_click((fun _ -> 
-    let game = api.NewGame rndColor defaultConfig
+    let game = api.NewGame colorGtor defaultConfig
     updateUi game; null), false)
 
-api.NewGame rndColor defaultConfig |> updateUi 
+api.NewGame colorGtor defaultConfig |> updateUi 
