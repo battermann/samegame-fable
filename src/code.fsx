@@ -1,4 +1,6 @@
 ﻿#r "../node_modules/fable-core/Fable.Core.dll"
+#load "games.fsx"
+open Games
 
 module SameGameTypes =
 
@@ -182,7 +184,7 @@ let play game (x,y) =
     | _  -> None
 
 // val renderBoard : board:Board -> string
-let renderBoard (board:Board) =
+let renderBoardToHtmlString (board:Board) =
     let renderCell x y col = sprintf "<td class='sg-td'><a href='javaScript:void(0);' id='cell-%d-%d'><div class='sg-cell sg-color%d'></div></a></td>" x y col
 
     let makeBoard (board: int list list) = 
@@ -192,6 +194,7 @@ let renderBoard (board:Board) =
 
     makeBoard (board |> List.map (fun col -> col |> List.map (function Stone (Color c) -> c | Empty -> 0)))
 
+// val updateUi : game:Game option -> unit
 let rec updateUi game =
     let boardElement = document.getElementById("sg-board") :?> HTMLDivElement
     let scoreElement = document.getElementById ("sg-score") :?> HTMLDivElement
@@ -207,12 +210,12 @@ let rec updateUi game =
     
     match game with
     | Some (InProgress gs) -> 
-        let board = renderBoard gs.Board
+        let board = renderBoardToHtmlString gs.Board
         boardElement.innerHTML <- board
         addListeners (gs.Board.Length - 1) (gs.Board.[0].Length - 1)
         scoreElement.innerText <- sprintf "%i point(s)." gs.Score
     | Some (Finished gs)   -> 
-        let board = renderBoard gs.Board
+        let board = renderBoardToHtmlString gs.Board
         boardElement.innerHTML <- board
         scoreElement.innerText <- sprintf "No more moves. Your final score is %i point(s)." gs.Score
     | _ -> boardElement.innerText <- "Sorry, an error occurred while rendering the board."
@@ -220,23 +223,40 @@ let rec updateUi game =
 let rnd = new System.Random()
 let colorGtor i = rnd.Next(i) + 1 |> Color |> Stone 
 
-let defaultConfig = 
-    // no fable support for System.Int32.Parse
-    let strToInt (str:string) =
-        [for c in str -> c] 
-        |> List.rev 
-        |> List.mapi (fun i c -> (10.0**(float i)) * (float c)) 
-        |> List.sum
-        |> int
-    
+// no fable support for System.Int32.Parse
+let strToInt (str:string) =
+    [for c in str -> c] 
+    |> List.rev 
+    |> List.mapi (fun i c -> (10.0**(float i)) * (float c)) 
+    |> List.sum
+    |> int
+
+let defaultConfig =  
     (document.getElementById("sg-board") :?> HTMLDivElement).className
     |> fun className -> className.Split('-') 
     |> Array.map strToInt
     |> fun arr -> { NumberOfColumns =  arr.[0]; NumberOfRows = arr.[1]; MaxNumberOfColors = arr.[2] }
 
 let buttonNewGame = document.getElementById("new-game") :?> HTMLButtonElement
-buttonNewGame.addEventListener_click((fun _ -> 
+let selectGame = document.getElementById("sg-select-game") :?> HTMLSelectElement
+
+let newGameOnClick() =
     let game = api.NewGame colorGtor defaultConfig
-    updateUi game; null), false)
+    selectGame.selectedIndex <- 0.0 
+    updateUi game
+    
+let selectGameOnChange () =
+    let presetGtor gameNum =
+        let mutable index = 0;
+        let game = PresetGames.games.[gameNum]
+        (fun _ -> index <- index + 1; game.[index-1] |> Color |> Stone)
+
+    let gameNum = selectGame.value |> strToInt;
+    if gameNum >= 0 then
+        let game = api.NewGame (presetGtor gameNum) defaultConfig
+        updateUi game
+
+buttonNewGame.addEventListener_click((fun _ -> newGameOnClick(); null), false)
+selectGame.addEventListener_change((fun _ -> selectGameOnChange(); null), false)
 
 api.NewGame colorGtor defaultConfig |> updateUi 
