@@ -39,15 +39,17 @@ module SameGameTypes =
         Board:Board
         Score:int }
 
+    /// This is usually a function that produces (pseudo) random colors.
+    /// It can also be used to create a specific initial board position.
+    type StoneGenerator = unit-> CellState
+
     type GameConfig = {
         NumberOfColumns:int
         NumberOfRows:int
-        MaxNumberOfColors:int }
-
-    type StoneGenerator = (int -> CellState)
+        StoneGenerator:StoneGenerator }
 
     type SameGameApi = {
-        NewGame: StoneGenerator -> GameConfig -> Game option
+        NewGame: GameConfig -> Game option
         Play: Game -> Position -> Game }
 
 module SameGameDomain =
@@ -146,22 +148,20 @@ module SameGameDomain =
         | _                    -> game
 
     let private isValid conf =
-        if conf.MaxNumberOfColors < 3 || conf.MaxNumberOfColors > 8 then
-            false
-        elif conf.NumberOfColumns < 3 || conf.NumberOfColumns > 15 then
+        if conf.NumberOfColumns < 3 || conf.NumberOfColumns > 15 then
             false
         elif conf.NumberOfRows < 3 || conf.NumberOfRows > 15 then
             false
         else
             true
 
-    let private newGame gen config = 
-        let createBoard gen config =
-            List.init config.NumberOfColumns (fun _ -> List.init config.NumberOfRows (fun _ -> gen config.MaxNumberOfColors))
+    let private newGame config = 
+        let createBoard config =
+            List.init config.NumberOfColumns (fun _ -> List.init config.NumberOfRows (fun _ -> config.StoneGenerator()))
             |> fun board -> { Board = board; Score = 0 }
             |> evaluateGameState |> Some
         if config |> isValid then
-            createBoard gen config
+            createBoard config
         else None
 
     let api = {
@@ -177,13 +177,7 @@ Fable.Import.Node.require.Invoke("core-js") |> ignore
 
 let api = SameGameDomain.api
 
-let play game (x,y) =
-    match game with
-    | Some g -> 
-        Some (api.Play g { Col = x; Row = y })
-    | _  -> None
-
-// val renderBoard : board:Board -> string
+// val renderBoardToHtmlString : board:Board -> string
 let renderBoardToHtmlString (board:Board) =
     let renderCell x y col = sprintf "<td class='sg-td'><a href='javaScript:void(0);' id='cell-%d-%d'><div class='sg-cell sg-color%d'></div></a></td>" x y col
 
@@ -199,14 +193,19 @@ let rec updateUi game =
     let boardElement = document.getElementById("sg-board") :?> HTMLDivElement
     let scoreElement = document.getElementById ("sg-score") :?> HTMLDivElement
 
+    let play game (x,y) =
+        match game with
+        | Some g -> 
+            Some (api.Play g { Col = x; Row = y })
+        | _  -> None
+        |> updateUi
+
     let addListeners maxColIndex maxRowIndex  =
         [0..maxColIndex] |> List.iter (fun x ->
             [0..maxRowIndex] |> List.iter (fun y -> 
                 let cellId = sprintf "cell-%d-%d" x y
                 let el = document.getElementById(cellId) :?> HTMLButtonElement
-                el.addEventListener_click((fun _ -> 
-                    let game = play game (x,y)
-                    updateUi game; null))))
+                el.addEventListener_click((fun _ -> play game (x,y); null))))
     
     match game with
     | Some (InProgress gs) -> 
@@ -220,9 +219,6 @@ let rec updateUi game =
         scoreElement.innerText <- sprintf "No more moves. Your final score is %i point(s)." gs.Score
     | _ -> boardElement.innerText <- "Sorry, an error occurred while rendering the board."
 
-let rnd = new System.Random()
-let colorGtor i = rnd.Next(i) + 1 |> Color |> Stone 
-
 // no fable support for System.Int32.Parse
 let strToInt (str:string) =
     [for c in str -> c] 
@@ -232,31 +228,36 @@ let strToInt (str:string) =
     |> int
 
 let defaultConfig =  
+    let rndColorGtor i = 
+        let rnd = new System.Random()
+        fun () -> rnd.Next(i) + 1 |> Color |> Stone 
+
     (document.getElementById("sg-board") :?> HTMLDivElement).className
     |> fun className -> className.Split('-') 
     |> Array.map strToInt
-    |> fun arr -> { NumberOfColumns =  arr.[0]; NumberOfRows = arr.[1]; MaxNumberOfColors = arr.[2] }
+    |> fun arr -> { NumberOfColumns =  arr.[0]; NumberOfRows = arr.[1]; StoneGenerator = rndColorGtor arr.[2] }
 
 let buttonNewGame = document.getElementById("new-game") :?> HTMLButtonElement
 let selectGame = document.getElementById("sg-select-game") :?> HTMLSelectElement
 
 let newGameOnClick() =
-    let game = api.NewGame colorGtor defaultConfig
+    let game = api.NewGame defaultConfig
     selectGame.selectedIndex <- 0.0 
     updateUi game
+
+buttonNewGame.addEventListener_click((fun _ -> newGameOnClick(); null), false)
     
 let selectGameOnChange () =
     let presetGtor gameNum =
         let mutable index = 0;
         let game = PresetGames.games.[gameNum]
-        (fun _ -> index <- index + 1; game.[index-1] |> Color |> Stone)
+        (fun () -> index <- index + 1; game.[index-1] |> Color |> Stone)
 
     let gameNum = selectGame.value |> strToInt;
     if gameNum >= 0 then
-        let game = api.NewGame (presetGtor gameNum) defaultConfig
+        let game = api.NewGame { NumberOfColumns = 15; NumberOfRows = 15; StoneGenerator = presetGtor gameNum }
         updateUi game
 
-buttonNewGame.addEventListener_click((fun _ -> newGameOnClick(); null), false)
 selectGame.addEventListener_change((fun _ -> selectGameOnChange(); null), false)
 
-api.NewGame colorGtor defaultConfig |> updateUi 
+api.NewGame defaultConfig |> updateUi 
