@@ -226,11 +226,11 @@ let strToInt (str:string) =
     |> List.sum
     |> int
 
-let defaultConfig =  
-    let rndColorGtor i = 
-        let rnd = new System.Random()
-        fun () -> rnd.Next(i) + 1 |> Color |> Stone 
+let rndColorGtor i = 
+    let rnd = new System.Random()
+    fun () -> rnd.Next(i) + 1 |> Color |> Stone 
 
+let defaultConfig =  
     (document.getElementById("sg-board") :?> HTMLDivElement).className
     |> fun className -> className.Split('-') 
     |> Array.map strToInt
@@ -238,9 +238,16 @@ let defaultConfig =
 
 let buttonNewGame = document.getElementById("new-game") :?> HTMLButtonElement
 let selectGame = document.getElementById("sg-select-game") :?> HTMLSelectElement
+let selectWidth = document.getElementById("sg-select-w") :?> HTMLSelectElement
+let selectHeight = document.getElementById("sg-select-h") :?> HTMLSelectElement
+let selectColors = document.getElementById("sg-select-col") :?> HTMLSelectElement
+
+let config() = { NumberOfColumns = selectWidth.value |> strToInt
+                 NumberOfRows = selectHeight.value |> strToInt
+                 StoneGenerator = selectColors.value |> strToInt |> rndColorGtor }
 
 let newGameOnClick() =
-    let game = api.NewGame defaultConfig
+    let game = config() |> api.NewGame
     selectGame.selectedIndex <- 0.0 
     updateUi game
 
@@ -254,7 +261,7 @@ let selectGameOnChange () =
 
     let gameNum = selectGame.value |> strToInt;
     if gameNum >= 0 then
-        let game = api.NewGame { NumberOfColumns = 15; NumberOfRows = 15; StoneGenerator = presetGtor gameNum }
+        let game = api.NewGame { config() with StoneGenerator = presetGtor gameNum }
         updateUi game
 
 selectGame.addEventListener_change((fun _ -> selectGameOnChange(); null))
