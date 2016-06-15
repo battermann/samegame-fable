@@ -168,6 +168,7 @@ module SameGameDomain =
         NewGame = newGame
         Play = playIfRunning }
 
+open FSharp
 open Fable.Core 
 open Fable.Import.Browser
 open System
@@ -194,10 +195,8 @@ let rec updateUi game =
     let scoreElement = document.getElementById ("sg-score") :?> HTMLDivElement
 
     let play game (x,y) =
-        match game with
-        | Some g -> 
-            Some (api.Play g { Col = x; Row = y })
-        | _  -> None
+        game
+        |> Core.Option.map (fun g -> api.Play g { Col = x; Row = y })
         |> updateUi
 
     let addListeners maxColIndex maxRowIndex  =
@@ -245,7 +244,7 @@ let newGameOnClick() =
     selectGame.selectedIndex <- 0.0 
     updateUi game
 
-buttonNewGame.addEventListener_click((fun _ -> newGameOnClick(); null), false)
+buttonNewGame.addEventListener_click((fun _ -> newGameOnClick(); null))
     
 let selectGameOnChange () =
     let presetGtor gameNum =
@@ -258,6 +257,6 @@ let selectGameOnChange () =
         let game = api.NewGame { NumberOfColumns = 15; NumberOfRows = 15; StoneGenerator = presetGtor gameNum }
         updateUi game
 
-selectGame.addEventListener_change((fun _ -> selectGameOnChange(); null), false)
+selectGame.addEventListener_change((fun _ -> selectGameOnChange(); null))
 
 api.NewGame defaultConfig |> updateUi 
